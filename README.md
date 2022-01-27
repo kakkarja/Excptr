@@ -1,8 +1,8 @@
-# EnVarClear
-## Tool to clean env-var
+# Excptr
+## Decorator for catching exception and print them nicely
 ### [Production-Development]
 
 ## Installation
 ```
-pip install envarclear-karjakak
+pip install excptr-karjakak
 ```
