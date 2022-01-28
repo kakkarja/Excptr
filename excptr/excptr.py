@@ -9,6 +9,7 @@ import io, inspect
 
 
 def prex(details, exc_tr, fc_name):
+    """Printing Exception"""
     print(f"Filename caller: {details[0].filename.upper()}\n")
     print(f"ERROR - <{fc_name}>:")
     print(f"{'-' * 70}", end="\n")
@@ -43,10 +44,13 @@ def prex(details, exc_tr, fc_name):
 
 
 def crtk(v: str):
+    """Tkinter gui display"""
     import tkinter as tk
+    from tkinter import messagebox as msg
 
     root = tk.Tk()
     root.title("Exception Error Messages")
+    root.attributes("-topmost", 1)
     text = tk.Listbox(root, relief=tk.FLAT, width=70, selectbackground="light green")
     text.pack(side="left", expand=1, fill=tk.BOTH, pady=2, padx=(2, 0))
     scr = tk.Scrollbar(root, orient=tk.VERTICAL)
@@ -64,11 +68,33 @@ def crtk(v: str):
         height=len(val),
     )
     del val, v
+    scnd = 5000
+    def viewing():
+        nonlocal scnd
+        scnd += scnd if scnd < 20000 else 5000
+        match scnd:
+            case sec if sec <= 35000:
+                ans = msg.askyesno(
+                    "Viewing",
+                    f"Still viewing for another {scnd//1000} seconds?",
+                    parent=root,
+                )
+                if ans:
+                    root.after(scnd, viewing)
+                else:
+                    root.destroy()
+            case sec if sec > 35000:
+                msg.showinfo(
+                    "Viewing", "Viewing cannot exceed more than 1 minute!", parent=root
+                )
+                root.destroy()
+    root.after(5000, viewing)
     root.mainloop()
-    del root, text, scr
+    del root, text, scr, scnd
 
 
 def excp(m: int = -1):
+    """Decorator for function"""
     match m:
         case m if not isinstance(m, int):
             raise ValueError(f'm = "{m}" Need to be int instead!')
@@ -99,8 +125,28 @@ def excp(m: int = -1):
                             prex(details, e, f.__name__)
                         crtk(v.getvalue())
                         v.flush()
-                del details
+                del details, e
 
         return trac
 
     return ckerr
+def excpcls(m: int = -1):
+    """Decorator for class (for functions only)"""
+    match m:
+        case m if not isinstance(m, int):
+            raise ValueError(f'm = "{m}" Need to be int instead!')
+        case m if m not in [-1, 0, 1]:
+            raise ValueError(
+                f'm = "{m}" Need to be either one of them, [-1 or 0 or 1]!'
+            )
+    def catchcall(cls):
+        ckb = m
+        match cls:
+            case cls if not inspect.isclass(cls):
+                raise TypeError("Type error, suppose to be a class!")
+            case _:
+                for name, obj in vars(cls).items():
+                    if inspect.isfunction(obj):
+                        setattr(cls, name, excp(ckb)(obj))
+        return cls
+    return catchcall

@@ -1,3 +1,3 @@
-from .excptr import excp
+from .excptr import excp, excpcls
 
 __all__ = [None]
