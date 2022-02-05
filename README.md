@@ -21,6 +21,7 @@ ERROR - <func_name>:
 Start at:
 line 26 in <module>:
     print(x.func_name(1, 3, '4'))
+Filename: /USERS/EXCPTR.PY
 line 111 in trac:
     if fn := f(*args, **kwargs):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

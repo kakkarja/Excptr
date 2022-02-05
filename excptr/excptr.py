@@ -10,12 +10,15 @@ import io, inspect
 
 def prex(details, exc_tr, fc_name):
     """Printing Exception"""
-    print(f"Filename caller: {details[0].filename.upper()}\n")
+    print(f"\nFilename caller: {details[0].filename.upper()}\n")
     print(f"ERROR - <{fc_name}>:")
     print(f"{'-' * 70}", end="\n")
     print("Start at:\n")
 
+    filenm = details[0].filename
     for detail in details:
+        if filenm != detail.filename:
+            print(f"Filename: {detail.filename.upper()}\n")
         cc = fill(
             "".join(detail.code_context).strip(),
             initial_indent=" " * 4,
@@ -24,13 +27,15 @@ def prex(details, exc_tr, fc_name):
         print(f"line {detail.lineno} in {detail.function}:\n" f"{cc}\n")
         del detail, cc
 
-    tot = f"<- Exception raise: {exc_tr.__class__.__name__} ->"
+    tot = f">>>- Exception raise: {exc_tr.__class__.__name__} ->"
     print("~" * len(tot))
     print(tot)
     print("~" * len(tot) + "\n")
 
     allextr = inspect.getinnerframes(exc_tr.__traceback__)[1:]
     for extr in allextr:
+        if filenm != extr.filename:
+            print(f"Filename: {extr.filename.upper()}\n")
         cc = fill(
             "".join(extr.code_context).strip(),
             initial_indent=" " * 4,
@@ -40,7 +45,7 @@ def prex(details, exc_tr, fc_name):
         del extr, cc
     print(f"{exc_tr.__class__.__name__}: {exc_tr.args[0]}")
     print(f"{'-' * 70}", end="\n")
-    del tot, allextr, details, exc_tr, fc_name
+    del tot, allextr, filenm, details, exc_tr, fc_name
 
 
 def crtk(v: str):
@@ -73,7 +78,7 @@ def crtk(v: str):
         nonlocal scnd
         scnd += scnd if scnd < 20000 else 5000
         match scnd:
-            case sec if sec <= 35000:
+            case sec if sec <= 25000:
                 ans = msg.askyesno(
                     "Viewing",
                     f"Still viewing for another {scnd//1000} seconds?",
@@ -83,7 +88,7 @@ def crtk(v: str):
                     root.after(scnd, viewing)
                 else:
                     root.destroy()
-            case sec if sec > 35000:
+            case sec if sec > 25000:
                 msg.showinfo(
                     "Viewing", "Viewing cannot exceed more than 1 minute!", parent=root
                 )
