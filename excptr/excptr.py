@@ -5,11 +5,12 @@
 from functools import wraps
 from textwrap import fill
 from contextlib import redirect_stdout
-import io, inspect
+import io, inspect, os
 
 
 def prex(details, exc_tr, fc_name):
     """Printing Exception"""
+
     print(f"\nFilename caller: {details[0].filename.upper()}\n")
     print(f"ERROR - <{fc_name}>:")
     print(f"{'-' * 70}", end="\n")
@@ -17,15 +18,17 @@ def prex(details, exc_tr, fc_name):
 
     filenm = details[0].filename
     for detail in details:
-        if filenm != detail.filename:
-            print(f"Filename: {detail.filename.upper()}\n")
-        cc = fill(
-            "".join(detail.code_context).strip(),
-            initial_indent=" " * 4,
-            subsequent_indent=" " * 4,
-        )
-        print(f"line {detail.lineno} in {detail.function}:\n" f"{cc}\n")
-        del detail, cc
+        if "excptr.py" not in detail.filename:
+            if filenm != detail.filename:
+                print(f"Filename: {detail.filename.upper()}\n")
+            cc = fill(
+                "".join(detail.code_context).strip(),
+                initial_indent=" " * 4,
+                subsequent_indent=" " * 4,
+            )
+            print(f"line {detail.lineno} in {detail.function}:\n" f"{cc}\n")
+            del cc
+        del detail
 
     tot = f">>>- Exception raise: {exc_tr.__class__.__name__} ->"
     print("~" * len(tot))
@@ -34,15 +37,17 @@ def prex(details, exc_tr, fc_name):
 
     allextr = inspect.getinnerframes(exc_tr.__traceback__)[1:]
     for extr in allextr:
-        if filenm != extr.filename:
-            print(f"Filename: {extr.filename.upper()}\n")
-        cc = fill(
-            "".join(extr.code_context).strip(),
-            initial_indent=" " * 4,
-            subsequent_indent=" " * 4,
-        )
-        print(f"line {extr.lineno} in {extr.function}:\n" f"{cc}\n")
-        del extr, cc
+        if "excptr.py" not in extr.filename:
+            if filenm != extr.filename:
+                print(f"Filename: {extr.filename.upper()}\n")
+            cc = fill(
+                "".join(extr.code_context).strip(),
+                initial_indent=" " * 4,
+                subsequent_indent=" " * 4,
+            )
+            print(f"line {extr.lineno} in {extr.function}:\n" f"{cc}\n")
+            del cc
+        del extr
     print(f"{exc_tr.__class__.__name__}: {exc_tr.args[0]}")
     print(f"{'-' * 70}", end="\n")
     del tot, allextr, filenm, details, exc_tr, fc_name
@@ -50,6 +55,7 @@ def prex(details, exc_tr, fc_name):
 
 def crtk(v: str):
     """Tkinter gui display"""
+
     import tkinter as tk
     from tkinter import messagebox as msg
 
@@ -74,6 +80,7 @@ def crtk(v: str):
     )
     del val, v
     scnd = 5000
+
     def viewing():
         nonlocal scnd
         scnd += scnd if scnd < 20000 else 5000
@@ -93,19 +100,32 @@ def crtk(v: str):
                     "Viewing", "Viewing cannot exceed more than 1 minute!", parent=root
                 )
                 root.destroy()
+
     root.after(5000, viewing)
     root.mainloop()
     del root, text, scr, scnd
 
 
-def excp(m: int = -1):
+def ckrflex(filenm: str) -> bool:
+    if os.path.exists(filenm):
+        with open(filenm) as rd:
+            if rd.readline():
+                return False
+            else:
+                return True
+    else:
+        return True
+
+
+def excp(m: int = -1, filenm: str = None):
     """Decorator for function"""
+
     match m:
         case m if not isinstance(m, int):
             raise ValueError(f'm = "{m}" Need to be int instead!')
-        case m if m not in [-1, 0, 1]:
+        case m if m not in [-1, 0, 1, 2]:
             raise ValueError(
-                f'm = "{m}" Need to be either one of them, [-1 or 0 or 1]!'
+                f'm = "{m}" Need to be either one of them, [-1 or 0 or 1 or 2]!'
             )
 
     def ckerr(f):
@@ -130,20 +150,47 @@ def excp(m: int = -1):
                             prex(details, e, f.__name__)
                         crtk(v.getvalue())
                         v.flush()
+                    case 2:
+                        if filenm:
+                            from datetime import datetime as dt
+
+                            v = io.StringIO()
+                            with redirect_stdout(v):
+                                prex(details, e, f.__name__)
+                            wrm = (
+                                str(dt.today()).rpartition(".")[0]
+                                + ": TRACING EXCEPTION\n"
+                                if ckrflex(filenm)
+                                else "\n"
+                                + str(dt.today()).rpartition(".")[0]
+                                + ": TRACING EXCEPTION\n"
+                            )
+                            with open(filenm, "a") as log:
+                                log.write(wrm)
+                                log.write(v.getvalue())
+                            v.flush()
+                            del v, wrm
+                        else:
+                            raise
+
                 del details, e
 
         return trac
 
     return ckerr
-def excpcls(m: int = -1):
+
+
+def excpcls(m: int = -1, filenm: str = None):
     """Decorator for class (for functions only)"""
+
     match m:
         case m if not isinstance(m, int):
             raise ValueError(f'm = "{m}" Need to be int instead!')
-        case m if m not in [-1, 0, 1]:
+        case m if m not in [-1, 0, 1, 2]:
             raise ValueError(
-                f'm = "{m}" Need to be either one of them, [-1 or 0 or 1]!'
+                f'm = "{m}" Need to be either one of them, [-1 or 0 or 1 or 2]!'
             )
+
     def catchcall(cls):
         ckb = m
         match cls:
@@ -152,6 +199,8 @@ def excpcls(m: int = -1):
             case _:
                 for name, obj in vars(cls).items():
                     if inspect.isfunction(obj):
-                        setattr(cls, name, excp(ckb)(obj))
+                        setattr(cls, name, excp(ckb, filenm)(obj))
+
         return cls
+
     return catchcall
