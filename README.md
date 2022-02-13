@@ -60,3 +60,5 @@ TypeError: unsupported operand type(s) for +: 'int' and 'str'
     - **2 -> for logging the tracing to a file**
         - **If you choose 2, please give filename path**
         - **By default filename is None and if not given filename path, it will be defaulted back to -1 (raise exception)**
+        - **Can use default user_path/dir/file**
+            - **Create default dir function available**

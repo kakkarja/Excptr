@@ -5,7 +5,29 @@
 from functools import wraps
 from textwrap import fill
 from contextlib import redirect_stdout
-import io, inspect, os
+from datetime import datetime as dt
+import io, inspect, os, sys
+
+
+__all__ = ['']
+
+
+DIRPATH = (
+    os.environ["USERPROFILE"] if sys.platform.startswith("win") else os.environ["HOME"]
+)
+DEFAULTDIR = os.path.join(DIRPATH, "EXCPTR")
+DEFAULTFILE = os.path.join(
+    DEFAULTDIR, f"{int(dt.timestamp(dt.today().replace(microsecond=0)))}_EXCPTR.log"
+)
+
+
+def defd():
+    """Create default directory"""
+
+    if not os.path.isdir(DEFAULTDIR):
+        os.mkdir(DEFAULTDIR)
+    else:
+        raise Exception(f"{DEFAULTDIR} is already exist!")
 
 
 def prex(details, exc_tr, fc_name):
@@ -107,6 +129,8 @@ def crtk(v: str):
 
 
 def ckrflex(filenm: str) -> bool:
+    """Checking file existence or an empty file"""
+
     if os.path.exists(filenm):
         with open(filenm) as rd:
             if rd.readline():
@@ -152,8 +176,6 @@ def excp(m: int = -1, filenm: str = None):
                         v.flush()
                     case 2:
                         if filenm:
-                            from datetime import datetime as dt
-
                             v = io.StringIO()
                             with redirect_stdout(v):
                                 prex(details, e, f.__name__)
