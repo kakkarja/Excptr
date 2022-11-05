@@ -49,7 +49,16 @@ def prex(details, exc_tr, fc_name):
                 subsequent_indent=" " * 4,
             )
             print(f"line {detail.lineno} in {detail.function}:\n" f"{cc}\n")
+            err = None
+            for li in cc.splitlines():
+                if fc_name in li:
+                    err = li
+                    break
             del cc
+            if err:
+                print(f"Detecting ERROR:\n{err}")
+                print(f"{err.index(fc_name)*' '}{len(fc_name)*'^'}")
+            del err
         del detail
 
     tot = f">>>- Exception raise: {exc_tr.__class__.__name__} ->"
